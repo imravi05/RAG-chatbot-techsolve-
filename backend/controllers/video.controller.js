@@ -11,6 +11,7 @@ export const analyzeVideos = async (req, res) => {
     const youtubeData = await getYoutubeMetadata(youtubeUrl);
 
     const instagramData = await getInstagramMetadata(instagramUrl);
+    
     const youtubeER = calculateEngagementRate(
         youtubeData.views,
         youtubeData.likes,
@@ -38,12 +39,15 @@ export const analyzeVideos = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      youtube: youtubeData,
-      instagram: instagramData,
-      transcripts: {
-        youtube: youtubeTranscript,
-        instagram: instagramTranscript
+      trandcripts:{
+        metadata : youtubeData,
+        transcript : youtubeTranscript
+      },
+      instagram:{
+        metadata : instagramData,
+        transcript : instagramTranscript  
       }
+      
     });
   } catch (error) {
     console.error(error);

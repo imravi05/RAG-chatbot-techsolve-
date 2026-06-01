@@ -1,23 +1,40 @@
-import YTDlpWrap from "yt-dlp-wrap";
+import fs from "fs";
 import path from "path";
+import YTDlpWrap from "yt-dlp-wrap";
 
-
-console.log(YTDlpWrap);
 const ytDlpWrap = new YTDlpWrap.default();
 
 export const downloadAudio = async (url, outputName) => {
-  const outputPath = path.resolve(
-    "downloads",
-    `${outputName}.mp3`
+
+  const downloadsDir = path.resolve("downloads");
+
+  const outputTemplate = path.join(
+    downloadsDir,
+    `${outputName}.%(ext)s`
   );
 
   await ytDlpWrap.execPromise([
-  url,
-  "-f",
-  "bestaudio",
-  "-o",
-  outputPath
-]);
+    url,
+    "-f",
+    "bestaudio",
+    "-o",
+    outputTemplate
+  ]);
 
-  return outputPath;
+  const files = fs.readdirSync(downloadsDir);
+
+  const downloadedFile = files.find(
+    file => file.startsWith(outputName)
+  );
+
+  if (!downloadedFile) {
+    throw new Error(
+      `Downloaded file not found for ${outputName}`
+    );
+  }
+
+  return path.join(
+    downloadsDir,
+    downloadedFile
+  );
 };

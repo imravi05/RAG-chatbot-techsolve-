@@ -15,6 +15,7 @@ export const transcribeAudio = async (audioUrl) => {
       confidence: transcript.confidence,
       words: transcript.words,
     };
+    
   } catch (error) {
     console.error("AssemblyAI Error:", error);
     throw error;
