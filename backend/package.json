@@ -12,12 +12,18 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@google/genai": "^2.7.0",
+    "@langchain/openai": "^1.4.7",
+    "@langchain/textsplitters": "^1.0.1",
+    "@pinecone-database/pinecone": "^7.2.0",
+    "@qdrant/js-client-rest": "^1.18.0",
     "apify-client": "^2.23.3",
     "assemblyai": "^4.33.3",
     "axios": "^1.16.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "langchain": "^1.4.2",
     "youtubei.js": "^17.0.1",
     "yt-dlp-wrap": "^2.3.12"
   },
