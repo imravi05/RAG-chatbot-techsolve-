@@ -1,6 +1,8 @@
 import { getYoutubeMetadata } from "../services/youtube.service.js";
 import { getInstagramMetadata } from "../services/instagram.service.js";
 import { calculateEngagementRate } from "../services/engament.service.js";
+import { getTranscript } from "../services/transcript.service.js";
+
 
 export const analyzeVideos = async (req, res) => {
   try {
@@ -24,10 +26,24 @@ export const analyzeVideos = async (req, res) => {
         youtubeData.engagementRate = youtubeER;
         instagramData.engagementRate = instagramER;
 
+        const youtubeTranscript = await getTranscript(
+                youtubeUrl,
+                "youtube_video"
+               );
+
+      const instagramTranscript = await getTranscript(
+                instagramUrl,
+                "instagram_video"
+              );
+
     res.status(200).json({
       success: true,
       youtube: youtubeData,
       instagram: instagramData,
+      transcripts: {
+        youtube: youtubeTranscript,
+        instagram: instagramTranscript
+      }
     });
   } catch (error) {
     console.error(error);
