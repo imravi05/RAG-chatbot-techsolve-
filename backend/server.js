@@ -1,29 +1,33 @@
 import cors from 'cors';
 import express from 'express';
-import videoRoutes from './routes/video.routes.js';
 import dotenv from 'dotenv';
 
+dotenv.config();
 
+const { default: videoRoutes } = await import('./routes/video.routes.js');
+const { default: chatRoutes }  = await import('./routes/chat.routes.js');
 
 const app = express();
-
-dotenv.config();
-app.use(express.json());
-app.disable('x-powered-by');  
 const PORT = process.env.PORT || 5000;
 
+// ── Middleware 
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
-// routes 
-app.use("/api/v1/videos", videoRoutes);
+app.use(express.json());
+app.disable('x-powered-by');
 
+// ── Routes 
+app.use('/api/v1/videos', videoRoutes);  // POST /api/v1/videos/analyze
+app.use('/api/v1/chat',   chatRoutes);   // POST /api/v1/chat
 
-
-const server = app.listen(5000, () => {
-  console.log('Server is running on port 5000');
-  // console.log(`API Key: ${process.env.ASSEMBLYAI_API_KEY}`);
-  // console.log(`Pinecone API Key: ${process.env.PINECONE_API_KEY}`); 
+app.get('/api/v1/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-
-
-
+app.listen(PORT, () => {
+  console.log(`🚀 TechSolve RAG server running on http://localhost:${PORT}`);
+});

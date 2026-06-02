@@ -1,9 +1,11 @@
 import { AssemblyAI } from "assemblyai";
 
-console.log(process.env.ASSEMBLYAI_API_KEY);
+if (!process.env.ASSEMBLYAI_API_KEY) {
+  throw new Error("ASSEMBLYAI_API_KEY is not set in environment variables.");
+}
 
 const client = new AssemblyAI({
-  apiKey: process.env.ASSEMBLYAI_API_KEY || "a243e1b865bf4b7e9c0a84bc06029045",
+  apiKey: process.env.ASSEMBLYAI_API_KEY,
 });
 
 export default client;
