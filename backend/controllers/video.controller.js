@@ -6,29 +6,53 @@ import { chunkTranscript } from "../services/chunking.service.js";
 import { storeChunks } from "../services/vector.service.js";
 
 /**
- * Extract a short, safe ID from a video URL for use as a Pinecone namespace.
- * e.g. youtube.com/watch?v=abc123  → "yt-abc123"
- *      instagram.com/reel/xyz456/  → "ig-xyz456"
+ * Extract a short, filesystem-safe ID from a video URL for use as a
+ * Pinecone namespace and download filename.
+ *
+ * Handles:
+ *  - youtube.com/watch?v=ID          → "yt-ID"
+ *  - youtube.com/shorts/ID           → "yt-ID"
+ *  - youtu.be/ID                     → "yt-ID"
+ *  - instagram.com/reel/SHORTCODE/   → "ig-SHORTCODE"
+ *  - instagram.com/p/SHORTCODE/      → "ig-SHORTCODE"
  */
 const extractVideoId = (url, platform) => {
+  /** Strip characters that are unsafe in filenames / Pinecone namespaces */
+  const sanitize = (str) => str.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64);
+
   try {
     const parsed = new URL(url);
+
     if (platform === "youtube") {
+      // Standard watch URL: ?v=ID
       const v = parsed.searchParams.get("v");
-      if (v) return `yt-${v}`;
-      // Handles youtu.be/SHORT_ID
-      const pathId = parsed.pathname.replace("/", "").slice(0, 16);
-      return `yt-${pathId}`;
+      if (v) return `yt-${sanitize(v)}`;
+
+      // YouTube Shorts: /shorts/ID
+      const shortsMatch = parsed.pathname.match(/\/shorts\/([^/?#]+)/);
+      if (shortsMatch) return `yt-${sanitize(shortsMatch[1])}`;
+
+      // Short link: youtu.be/ID
+      if (parsed.hostname === "youtu.be") {
+        const id = parsed.pathname.replace(/^\//, "").split("?")[0];
+        if (id) return `yt-${sanitize(id)}`;
+      }
+
+      // Generic YouTube path fallback (e.g. embedded /v/ID)
+      const ytPathMatch = parsed.pathname.match(/\/(?:v|e|embed)\/([^/?#]+)/);
+      if (ytPathMatch) return `yt-${sanitize(ytPathMatch[1])}`;
     }
+
     if (platform === "instagram") {
       // /reel/SHORTCODE/ or /p/SHORTCODE/
-      const match = parsed.pathname.match(/\/(reel|p)\/([^/]+)/);
-      if (match) return `ig-${match[2]}`;
+      const match = parsed.pathname.match(/\/(reel|p)\/([^/?#]+)/);
+      if (match) return `ig-${sanitize(match[2])}`;
     }
-  } catch (_) { /* fall through */ }
+  } catch (_) { /* fall through to fallback */ }
 
-  // Fallback: hash the URL down to something short
-  return `${platform}-${Buffer.from(url).toString("base64").slice(0, 12)}`;
+  // Fallback: base64 of URL, stripped of non-filename-safe chars
+  const b64 = Buffer.from(url).toString("base64").replace(/[^a-zA-Z0-9]/g, "").slice(0, 16);
+  return `${platform}-${b64}`;
 };
 
 /**
@@ -78,8 +102,8 @@ export const analyzeVideos = async (req, res) => {
     // ── 4. Download + transcribe both videos ──────────────────────────────
     console.log("[analyze] Downloading & transcribing videos...");
     const [youtubeTranscript, instagramTranscript] = await Promise.all([
-      getTranscript(youtubeUrl,   `yt-${youtubeNS}`),
-      getTranscript(instagramUrl, `ig-${instagramNS}`),
+      getTranscript(youtubeUrl,   youtubeNS),
+      getTranscript(instagramUrl, instagramNS),
     ]);
 
     // ── 5. Chunk transcripts ───────────────────────────────────────────────

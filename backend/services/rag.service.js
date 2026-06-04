@@ -16,8 +16,9 @@ const ai = new GoogleGenAI({
  * @param {number} topK - Number of results to fetch
  */
 export const searchVectors = async (queryVector, namespace = null, topK = 6) => {
+  // Pinecone SDK v7 query options — namespace is an inline field
   const queryOptions = {
-    vector: queryVector,
+    vector: Array.from(queryVector), // ensure plain JS array
     topK,
     includeMetadata: true,
   };
